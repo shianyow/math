@@ -1,7 +1,7 @@
 import random
 
 def generate_number():    
-    return random.sample([x for x in range(10)], 4)
+    return random.sample(range(10), 4)
 
 def check_number(number, guess):
     a, b = 0, 0
