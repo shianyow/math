@@ -132,6 +132,7 @@ def solve(matrix, prev_sequence):
                 cur_sequence.append([
                     (y, x),
                     (m[0], m[1]),
+                    (matrix[y][x], matrix[m[0]][m[1]]),
                 ])
                 cur_matrix = deepcopy(matrix)
                 cur_matrix[y][x] = 0
@@ -155,21 +156,20 @@ def print_solution(solution, indent):
     print(" " * indent + "Sequence:")
     c = 0 
     for i in solution['sequence']:
-        direction = "Next"
+        direction = ""
         if (i[1][0] == i[0][0] and i[1][1] > i[0][1]):
-            direction = "Right"
-        elif (i[1][0] - i[0][0] == i[0][1] - i[1][1]):
-            direction = "Lower right"
+            direction = "right"
+        elif (i[1][0] - i[0][0] == i[1][1] - i[0][1]):
+            direction = "rower right"
         elif (i[1][0] > i[0][0] and i[1][1] == i[0][1]):
-            direction = "Down"
+            direction = "down"
         elif (i[1][0] - i[0][0] == i[0][1] - i[1][1]):
-            direction = "Lower left"
+            direction = "lower left"
         else:
-            direction = "Next"
+            direction = "next"
         c += 1
-        print(" " * indent, str(c) + ":", i, direction)
+        print(" " * indent, f'{c}: {i[2][0]}({i[0][0]},{i[0][1]}) with {i[2][1]}({i[1][0]},{i[1][1]}) of {direction}')
         
-    # print(" " * indent + "Sequence:", solution['sequence'])
     print(" " * indent + "Min_lines:", solution['min_lines'])
     print(" " * indent + "Min_kinds:", solution['min_kinds'])
     print(" " * indent + "Min_numbers:", solution['min_numbers'])
@@ -194,16 +194,25 @@ orig_matrix = [
     # [1, 0, 2, 3, 0, 0, 8, 1, 0],
 
     # Test sample 2 (takes about 5 minutes)
-    [0, 0, 0, 0, 0, 0, 0, 0, 4],
-    [0, 0, 0, 0, 0, 0, 0, 1, 8],
-    [0, 9, 0, 0, 0, 0, 8, 0, 5],
-    [0, 3, 0, 0, 0, 0, 5, 0, 3],
-    [0, 8, 0, 0, 5, 0, 0, 0, 0],
-    [0, 0, 4, 0, 0, 9, 0, 0, 0],
-    [3, 5, 3, 1, 0, 5, 8, 4, 5],
-    [4, 4, 1, 8, 9, 8, 5, 3, 5],
-    [3, 8, 5, 4, 9, 3, 5, 3, 1],
-    [5, 8, 4, 5, 4, 0, 0, 0, 0],
+    # [0, 0, 0, 0, 0, 0, 0, 0, 4],
+    # [0, 0, 0, 0, 0, 0, 0, 1, 8],
+    # [0, 9, 0, 0, 0, 0, 8, 0, 5],
+    # [0, 3, 0, 0, 0, 0, 5, 0, 3],
+    # [0, 8, 0, 0, 5, 0, 0, 0, 0],
+    # [0, 0, 4, 0, 0, 9, 0, 0, 0],
+    # [3, 5, 3, 1, 0, 5, 8, 4, 5],
+    # [4, 4, 1, 8, 9, 8, 5, 3, 5],
+    # [3, 8, 5, 4, 9, 3, 5, 3, 1],
+    # [5, 8, 4, 5, 4, 0, 0, 0, 0],
+
+    # [4,8,7,4,2,6,7,6,5],
+    # [1,5,9,5,1,5,1,8,7],
+    # [8,7,6,4,2,8,0,0,0],
+
+    [1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1],
 
     # Test sample 2-1 (takes about 5 minutes)
     # [0, 0, 0, 0, 0, 0, 0, 0, 4],
@@ -271,16 +280,16 @@ orig_matrix = [
     # [0,0,0,0,0,0,0,0,0]
 ]
 
-total_solve_called = 0
-total_match_called = 0
+# total_solve_called = 0
+# total_match_called = 0
 
-best_solution = {
-    'matrix': orig_matrix,
-    'sequence': [],
-    'min_lines': count_line(orig_matrix),
-    'min_kinds': count_kind(orig_matrix),
-    'min_numbers': count_number(orig_matrix),
-}
+# best_solution = {
+#     'matrix': orig_matrix,
+#     'sequence': [],
+#     'min_lines': count_line(orig_matrix),
+#     'min_kinds': count_kind(orig_matrix),
+#     'min_numbers': count_number(orig_matrix),
+# }
 print_level = 2
 
 def convert_num(matrix):
@@ -290,16 +299,71 @@ def convert_num(matrix):
                 line[i] = 10 - line[i]
     return matrix
 
-print("Original matrix:")
-print_matrix(orig_matrix, 0)
 
-print("Converted matrix:")
-print_matrix(convert_num(orig_matrix), 0)
+def insert_lines(matrix, append_next_line):
+    new_matrix = deepcopy(matrix)
 
-final_solution = solve(best_solution['matrix'], best_solution['sequence'])
-print("Original matrix:")
-print_matrix(orig_matrix, 0)
-print("\nFinal solution: ")
-print_solution(final_solution, 0)
+    if append_next_line:
+        # Case 1: append from next line
+        new_matrix.append([0] * 9)
+        index_y = len(new_matrix) - 1
+        index_x = 0
+    else:
+        # Case 2: append after last number
+        index_y = len(new_matrix) - 1
+        if 0 in new_matrix[index_y]:
+            index_x = new_matrix[index_y].index(0)
+        else:
+            new_matrix.append([0] * 9)
+            index_y += 1
+            index_x = 0
+        
+    for line in matrix:
+        for i in range(9):
+            if line[i] > 0:
+                new_matrix[index_y][index_x] = line[i]
+                index_x += 1
+                if index_x == 9:
+                    new_matrix.append([0] * 9)
+                    index_y += 1
+                    index_x = 0
 
-print("Total trial count:", total_solve_called, "Total match count:", total_match_called)
+    return new_matrix
+
+while True:
+    total_solve_called = 0
+    total_match_called = 0
+
+    best_solution = {
+        'matrix': orig_matrix,
+        'sequence': [],
+        'min_lines': count_line(orig_matrix),
+        'min_kinds': count_kind(orig_matrix),
+        'min_numbers': count_number(orig_matrix),
+    }
+
+    print("Original matrix:")
+    print_matrix(orig_matrix, 0)
+
+    # print("Converted matrix:")
+    # print_matrix(convert_num(orig_matrix), 0)
+
+    final_solution = solve(best_solution['matrix'], best_solution['sequence'])
+    print("Original matrix:")
+    print_matrix(orig_matrix, 0)
+    print("\nFinal solution: ")
+    print_solution(final_solution, 0)
+
+    print("Total trial count:", total_solve_called, "Total match count:", total_match_called)
+
+    if len(final_solution['matrix']) == 0:
+        break
+
+    while True:
+        cont = str(input("Continue?\n1: append from next line\n2: append after last number\nq: quit\n"))
+        if cont in ['1', '2', 'q']:
+            break
+    if cont == 'q':
+        break
+    print_matrix(final_solution['matrix'], 0)
+    orig_matrix = insert_lines(final_solution['matrix'], cont == '1')
